@@ -33,9 +33,12 @@ models = {
 
 model_results = {}
 
+# Warm-up run to initialize NumPy/SciPy libraries
+_ = LinearRegression().fit(features_train, targets_train)
+
 # Train and evaluate
 for model_name, model_instance in models.items():
-    start_time = time.time()
+    start_time = time.perf_counter()
     if model_name in ["SVR", "Neural Network"]:
         model_instance.fit(features_train_scaled, targets_train)
         predictions = model_instance.predict(features_test_scaled)
@@ -48,7 +51,7 @@ for model_name, model_instance in models.items():
         'root_mean_squared_error': root_mean_squared_error(targets_test, predictions),
         'mean_absolute_error': mean_absolute_error(targets_test, predictions),
         'r_squared_value': r2_score(targets_test, predictions),
-        'training_time': time.time() - start_time
+        'training_time': time.perf_counter() - start_time
     }
 
 # Proportional Point System (0.0 to 1.0 points based on magnitude)
@@ -95,7 +98,7 @@ for model_name, result_data in model_results.items():
     marker = "<-- BEST" if model_name == best_model_name else ""
     print(f"{model_name.ljust(17)} | RMSE: {result_data['root_mean_squared_error']:5.2f} | "
           f"MAE: {result_data['mean_absolute_error']:5.2f} | R²: {result_data['r_squared_value']:5.3f} | "
-          f"Time: {result_data['training_time']:5.4f}s | Score: {result_data['total_score']:5.1f}% {marker}")
+          f"Time: {result_data['training_time']:5.4f}s | Score: {result_data['total_score']:5.2f}% {marker}")
 
 # Plot 2x2 grid
 figure, axes = plt.subplots(2, 2, figsize=(12, 10))
@@ -110,7 +113,7 @@ for index, (model_name, result_data) in enumerate(model_results.items()):
     axis.set_xlabel("Actual SPL (dB)")
     axis.set_ylabel("Predicted SPL (dB)")
     
-    axis.set_title(f"{model_name}\nRMSE: {result_data['root_mean_squared_error']:.2f} | Score: {result_data['total_score']:.1f}%", 
+    axis.set_title(f"{model_name}\nRMSE: {result_data['root_mean_squared_error']:.2f} | Score: {result_data['total_score']:.2f}%", 
                  color='green' if is_best_model else 'black', 
                  fontweight='bold' if is_best_model else 'normal')
 
