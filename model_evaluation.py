@@ -10,10 +10,33 @@ from sklearn.metrics import root_mean_squared_error, mean_absolute_error, r2_sco
 from sklearn.preprocessing import StandardScaler
 from ucimlrepo import fetch_ucirepo
 
+def validate_aerodynamic_bounds(features_data):
+    """
+    Validates that input features fall within physically possible aerodynamic bounds.
+    Raises ValueError if unsupported inputs (e.g., negative physical dimensions) are detected.
+    """
+    data_array = np.asarray(features_data)
+    # Feature indices: 0=Frequency, 1=Angle of Attack, 2=Chord, 3=Velocity, 4=Displacement Thickness
+    if (data_array[:, 0] <= 0).any():
+        raise ValueError("Invalid Input: Frequency must be greater than 0 Hz.")
+    if (data_array[:, 2] <= 0).any():
+        raise ValueError("Invalid Input: Chord length must be strictly positive.")
+    if (data_array[:, 3] <= 0).any():
+        raise ValueError("Invalid Input: Free-stream velocity must be greater than 0 m/s.")
+    if (data_array[:, 4] <= 0).any():
+        raise ValueError("Invalid Input: Suction side displacement thickness must be strictly positive.")
+    
+    # Check for missing values (NaNs)
+    if np.isnan(data_array).any():
+        raise ValueError("Invalid Input: Dataset contains missing values (NaNs).")
+
 # Fetch airfoil data
 airfoil = fetch_ucirepo(id=291)
 features = airfoil.data.features
 targets = airfoil.data.targets.values.ravel()
+
+# Validate raw data before processing
+validate_aerodynamic_bounds(features)
 
 # Split and scale data
 features_train, features_test, targets_train, targets_test = train_test_split(
@@ -80,13 +103,11 @@ best_model_name = ""
 
 print("--- Model Performance Comparison ---")
 for model_name, result_data in model_results.items():
-    # Sum the 0.0 to 1.0 scores (max 4.0)
     total_points = (result_data['rmse_points'] + 
                     result_data['mae_points'] + 
                     result_data['r_squared_points'] + 
                     result_data['time_points'])
     
-    # Convert to a percentage out of 100
     percentage_score = (total_points / 4.0) * 100
     result_data['total_score'] = percentage_score
     
