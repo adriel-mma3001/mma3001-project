@@ -59,7 +59,7 @@ features_test_scaled = scaler.transform(features_test)
 # Define models
 models = {
     "Linear Regression": LinearRegression(),
-    "Decision Tree": DecisionTreeRegressor(random_state=42),
+    "Decision Tree": DecisionTreeRegressor(max_depth=10, random_state=42),
     "SVR": SVR(kernel='rbf', C=100, gamma='scale'),
     "Neural Network": MLPRegressor(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42, early_stopping=True)
 }
