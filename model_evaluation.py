@@ -13,7 +13,17 @@ from ucimlrepo import fetch_ucirepo
 def validate_aerodynamic_bounds(features_data):
     """
     Validates that input features fall within physically possible aerodynamic bounds.
-    Raises ValueError if unsupported inputs (e.g., negative physical dimensions) are detected.
+
+    Parameters
+    ----------
+    features_data : array-like
+        The input dataset containing aerodynamic features (Frequency, Angle of Attack, 
+        Chord length, Free-stream velocity, and Displacement thickness).
+
+    Raises
+    ------
+    ValueError
+        If unsupported inputs (e.g., negative physical dimensions or NaNs) are detected.
     """
     data_array = np.asarray(features_data)
     # Feature indices: 0=Frequency, 1=Angle of Attack, 2=Chord, 3=Velocity, 4=Displacement Thickness
@@ -77,8 +87,27 @@ for model_name, model_instance in models.items():
         'training_time': time.perf_counter() - start_time
     }
 
-# Proportional Point System (0.0 to 1.0 points based on magnitude)
 def calculate_points(value, min_val, max_val, lower_is_better=True):
+    """
+    Calculates a Min-Max scaled proportional score between 0.0 and 1.0.
+
+    Parameters
+    ----------
+    value : float
+        The specific metric value to be scored.
+    min_val : float
+        The minimum bound of the metric across all evaluated models.
+    max_val : float
+        The maximum bound of the metric across all evaluated models.
+    lower_is_better : bool, optional
+        Indicates if a lower metric value represents better performance 
+        (default is True for metrics like RMSE, MAE, and Time).
+
+    Returns
+    -------
+    float
+        The normalized score bounded between 0.0 and 1.0.
+    """
     if max_val == min_val:
         return 1.0
     if lower_is_better:
