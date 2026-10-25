@@ -51,14 +51,14 @@ for model_name, model_instance in models.items():
         'training_time': time.time() - start_time
     }
 
-# Proportional Point System (1.0 to 4.0 points based on magnitude)
+# Proportional Point System (0.0 to 1.0 points based on magnitude)
 def calculate_points(value, min_val, max_val, lower_is_better=True):
     if max_val == min_val:
-        return 4.0
+        return 1.0
     if lower_is_better:
-        return 1.0 + 3.0 * ((max_val - value) / (max_val - min_val))
+        return (max_val - value) / (max_val - min_val)
     else:
-        return 1.0 + 3.0 * ((value - min_val) / (max_val - min_val))
+        return (value - min_val) / (max_val - min_val)
 
 # Extract min/max boundaries
 rmses = [res['root_mean_squared_error'] for res in model_results.values()]
@@ -77,21 +77,25 @@ best_model_name = ""
 
 print("--- Model Performance Comparison ---")
 for model_name, result_data in model_results.items():
+    # Sum the 0.0 to 1.0 scores (max 4.0)
     total_points = (result_data['rmse_points'] + 
                     result_data['mae_points'] + 
                     result_data['r_squared_points'] + 
                     result_data['time_points'])
-    result_data['total_score'] = total_points
     
-    if total_points > best_total_score:
-        best_total_score = total_points
+    # Convert to a percentage out of 100
+    percentage_score = (total_points / 4.0) * 100
+    result_data['total_score'] = percentage_score
+    
+    if percentage_score > best_total_score:
+        best_total_score = percentage_score
         best_model_name = model_name
 
 for model_name, result_data in model_results.items():
     marker = "<-- BEST" if model_name == best_model_name else ""
     print(f"{model_name.ljust(17)} | RMSE: {result_data['root_mean_squared_error']:5.2f} | "
           f"MAE: {result_data['mean_absolute_error']:5.2f} | R²: {result_data['r_squared_value']:5.3f} | "
-          f"Time: {result_data['training_time']:5.4f}s | Score: {result_data['total_score']:4.1f} points {marker}")
+          f"Time: {result_data['training_time']:5.4f}s | Score: {result_data['total_score']:5.1f}% {marker}")
 
 # Plot 2x2 grid
 figure, axes = plt.subplots(2, 2, figsize=(12, 10))
@@ -106,7 +110,7 @@ for index, (model_name, result_data) in enumerate(model_results.items()):
     axis.set_xlabel("Actual SPL (dB)")
     axis.set_ylabel("Predicted SPL (dB)")
     
-    axis.set_title(f"{model_name}\nRMSE: {result_data['root_mean_squared_error']:.2f} | Score: {result_data['total_score']:.1f} pts", 
+    axis.set_title(f"{model_name}\nRMSE: {result_data['root_mean_squared_error']:.2f} | Score: {result_data['total_score']:.1f}%", 
                  color='green' if is_best_model else 'black', 
                  fontweight='bold' if is_best_model else 'normal')
 
